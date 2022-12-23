@@ -1,12 +1,17 @@
 package main
 
 import (
+	"cw-cal/api"
 	"log"
 	"os"
 	"time"
 
 	"github.com/joho/godotenv"
 	tele "gopkg.in/telebot.v3"
+)
+
+var (
+	Poller = &tele.LongPoller{Timeout: 10 * time.Second}
 )
 
 func main() {
@@ -17,19 +22,8 @@ func main() {
 	}
 	pref := tele.Settings{
 		Token:  os.Getenv("API_KEY"),
-		Poller: &tele.LongPoller{Timeout: 10 * time.Second},
+		Poller: Poller,
 	}
-
-	b, err := tele.NewBot(pref)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	b.Handle("/hello", func(c tele.Context) error {
-		return c.Send("Hello!")
-	})
-
-	log.Println("Started bot successfully")
-	b.Start()
+	Bot := api.NewBot(pref)
+	Bot.Start()
 }
