@@ -3,8 +3,10 @@ package api
 import (
 	"cw-cal/model"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"strings"
+	"time"
 
 	tele "gopkg.in/telebot.v3"
 	"gopkg.in/telebot.v3/middleware"
@@ -25,6 +27,14 @@ const (
 	use /addCal to add your deadlines calendar link
 	use /deadline to see your current deadlines
 	`
+	REPORT_TEXT = `Hi...
+	Sorry to hear that you are experiencing issues with our service
+	please report your problem using:
+	/report <problem>
+	and state your problem after /report
+	example:
+	'/report the bot does not update my deadlines!'
+	`
 )
 
 var (
@@ -33,7 +43,7 @@ var (
 	// Reply buttons.
 	btnDeadline = menu.Text("⚠️ Deadlines")
 	btnInfo     = menu.Text("ℹ Info")
-	btnSettings = menu.Text("ℹ Help")
+	btnHelp     = menu.Text("ℹ Help")
 	btnReport   = menu.Text("💢 Report")
 )
 
@@ -69,16 +79,24 @@ func (b *CwBot) handlers() {
 	b.Handle("/info", b.infoHandler(), middleware.IgnoreVia(), b.registeredMW())
 	b.Handle("/addCal", b.addCalHandler(), middleware.IgnoreVia(), b.registeredMW())
 	b.Handle("/login", b.loginHandler(), middleware.IgnoreVia(), b.unregisteredMW())
+	b.Handle("/report", b.reportHandler(), middleware.IgnoreVia(), b.registeredMW())
 	b.Handle(tele.OnText, func(c tele.Context) error {
 		return c.Send("hi")
 	})
 	menu.Reply(
-		menu.Row(btnDeadline, btnInfo, btnSettings, btnReport),
+		menu.Row(btnDeadline, btnInfo, btnHelp, btnReport),
 	)
 	b.Handle("/start", func(c tele.Context) error {
 		return c.Send(WELCOME_TEXT, menu)
 	})
 	b.Handle(&btnDeadline, b.deadlineHandler(), b.registeredMW())
+	b.Handle(&btnInfo, b.infoHandler(), b.registeredMW())
+	b.Handle(&btnHelp, func(c tele.Context) error {
+		return c.Send(WELCOME_TEXT, menu)
+	})
+	b.Handle(&btnReport, func(c tele.Context) error {
+		return c.Send(REPORT_TEXT)
+	})
 }
 
 func (b *CwBot) deadlineHandler() tele.HandlerFunc {
@@ -91,7 +109,7 @@ func (b *CwBot) deadlineHandler() tele.HandlerFunc {
 				text = append(text, e.ToString())
 			}
 			ctx.Send(strings.Join(text, `
-			=========================================
+			====================================
 			`))
 		}
 		return ctx.Send("available deadlines listed above")
@@ -133,8 +151,25 @@ func (b *CwBot) addCalHandler() tele.HandlerFunc {
 		if err != nil {
 			return ctx.Send(err.Error())
 		}
-		b.logged[ctx.Sender().ID].Schedule = append(b.logged[ctx.Sender().ID].Schedule, *cal)
-		return ctx.Send("added successfully")
+		if b.logged[ctx.Sender().ID].AddCall(cal) {
+			return ctx.Send("added successfully")
+		}
+		return ctx.Send("calendar already exists")
+	}
+}
+
+func (b *CwBot) reportHandler() tele.HandlerFunc {
+	return func(ctx tele.Context) error {
+		sender, message := ctx.Sender().Username, ctx.Message().Payload
+		text := fmt.Sprintf("sender: %s, message: %s", sender, message)
+		if len(message) > 0 {
+			err := ioutil.WriteFile(fmt.Sprintf("../reports/report_%v.txt", time.Now().Format("01-02-2006")), []byte(text), 0)
+			if err != nil {
+				log.Fatal(err)
+				return ctx.Send("failed to write report")
+			}
+		}
+		return ctx.Send("report sent successfully")
 	}
 }
 

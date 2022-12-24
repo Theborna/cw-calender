@@ -89,3 +89,13 @@ type User struct {
 
 	Schedule []Calendar
 }
+
+func (u *User) AddCall(cal *Calendar) bool {
+	for _, c := range u.Schedule {
+		if c.Link() == cal.Link() {
+			return false
+		}
+	}
+	u.Schedule = append(u.Schedule, *cal)
+	return true
+}
