@@ -12,9 +12,19 @@ import (
 	tele "gopkg.in/telebot.v3"
 )
 
+type Event struct {
+	Summary     string    `json:"summary"`
+	Description string    `json:"description"`
+	Deadline    time.Time `json:"deadline"`
+}
+
+func (e *Event) ToString() string {
+	return fmt.Sprintf("Summary: %v\nDescription: %v\nDeadline: %v", e.Summary, e.Description, e.Deadline)
+}
+
 type Calendar struct {
-	link string
-	Data string
+	link   string
+	Events []Event
 }
 
 // const URL = `https:\\/\\/cw\\.sharif\\.edu\\/calendar\\/export_execute\\.php\\?userid=\\d+&authtoken=\\S+`
@@ -29,25 +39,31 @@ func NewCalendar(link string) (*Calendar, error) {
 	// if !matched {
 	// 	return nil, fmt.Errorf("invalid calendar url")
 	// }
-	data, _ := getLinkData(link)
+	cal := &Calendar{
+		link:   link,
+		Events: []Event{},
+	}
+	cal.UpdateEvents()
+	return cal, nil
+}
+
+func (c *Calendar) UpdateEvents() {
+	data, _ := getLinkData(c.link)
 	start, end := time.Now(), time.Now().Add(12*30*24*time.Hour)
 
-	events := []string{}
+	cal := gocal.NewParser(bytes.NewReader(data))
+	cal.Start, cal.End = &start, &end
+	cal.Parse()
 
-	c := gocal.NewParser(bytes.NewReader(data))
-	c.Start, c.End = &start, &end
-	c.Parse()
-
-	for _, e := range c.Events {
-		event := fmt.Sprintf("Summary: %s\nDescription: %s\ndeadline: %s", e.Summary, e.Description, e.End)
-		events = append(events, event)
+	events := []Event{}
+	for _, e := range cal.Events {
+		events = append(events, Event{
+			Summary:     e.Summary,
+			Description: e.Description,
+			Deadline:    *e.End,
+		})
 	}
-	return &Calendar{
-		link: link,
-		Data: strings.Join(events, `
-		=================================
-		`),
-	}, nil
+	c.Events = events
 }
 
 func (c *Calendar) Link() string {
@@ -71,6 +87,5 @@ func getLinkData(link string) ([]byte, error) {
 type User struct {
 	*tele.User
 
-	username string
 	Schedule []Calendar
 }
