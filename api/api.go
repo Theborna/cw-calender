@@ -69,8 +69,9 @@ func (b *CwBot) handlers() {
 	b.Handle("/info", b.infoHandler(), middleware.IgnoreVia(), b.registeredMW())
 	b.Handle("/addCal", b.addCalHandler(), middleware.IgnoreVia(), b.registeredMW())
 	b.Handle("/login", b.loginHandler(), middleware.IgnoreVia(), b.unregisteredMW())
-	// TODO: implement buttons
-
+	b.Handle(tele.OnText, func(c tele.Context) error {
+		return c.Send("hi")
+	})
 	menu.Reply(
 		menu.Row(btnDeadline, btnInfo, btnSettings, btnReport),
 	)
