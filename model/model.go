@@ -45,9 +45,7 @@ func NewCalendar(link string) (*Calendar, error) {
 	return &Calendar{
 		link: link,
 		Data: strings.Join(events, `
-
 		=================================
-
 		`),
 	}, nil
 }
@@ -73,5 +71,6 @@ func getLinkData(link string) ([]byte, error) {
 type User struct {
 	*tele.User
 
-	Calendar Calendar
+	username string
+	Schedule []Calendar
 }
