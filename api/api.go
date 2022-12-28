@@ -1,6 +1,7 @@
 package api
 
 import (
+	"cw-cal/database"
 	"cw-cal/model"
 	"fmt"
 	"io/ioutil"
@@ -57,17 +58,21 @@ func errHandler(err error) {
 type CwBot struct {
 	*tele.Bot
 
-	users  []model.User // TODO: use database
-	logged map[int64]*model.User
+	users    []model.User // TODO: use database
+	database *database.CwDatabase
+	logged   map[int64]*model.User
 }
 
 func NewBot(pref tele.Settings) *CwBot {
 	b, err := tele.NewBot(pref)
 	errHandler(err)
+	db, _ := database.NewCwDatabase()
+	// errHandler(err)
 	Bot := &CwBot{
-		Bot:    b,
-		users:  []model.User{},
-		logged: make(map[int64]*model.User),
+		Bot:      b,
+		users:    []model.User{},
+		database: db,
+		logged:   make(map[int64]*model.User),
 	}
 	Bot.handlers()
 	return Bot
@@ -80,6 +85,7 @@ func (b *CwBot) handlers() {
 	b.Handle("/addCal", b.addCalHandler(), middleware.IgnoreVia(), b.registeredMW())
 	b.Handle("/login", b.loginHandler(), middleware.IgnoreVia(), b.unregisteredMW())
 	b.Handle("/report", b.reportHandler(), middleware.IgnoreVia(), b.registeredMW())
+
 	b.Handle(tele.OnText, func(c tele.Context) error {
 		return c.Send("hi")
 	})
@@ -141,7 +147,12 @@ func (b *CwBot) registerHandler() tele.HandlerFunc {
 
 func (b *CwBot) loginHandler() tele.HandlerFunc {
 	return func(ctx tele.Context) error {
-		return ctx.Send("na")
+		user := b.database.GetUser(ctx.Sender().ID)
+		if user != nil {
+			b.logged[ctx.Sender().ID] = user
+			return ctx.Send("logged successfully")
+		}
+		return ctx.Send("user not registered")
 	}
 }
 
