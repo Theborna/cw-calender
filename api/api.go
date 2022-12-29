@@ -172,9 +172,9 @@ func (b *CwBot) addCalHandler() tele.HandlerFunc {
 func (b *CwBot) reportHandler() tele.HandlerFunc {
 	return func(ctx tele.Context) error {
 		sender, message := ctx.Sender().Username, ctx.Message().Payload
-		text := fmt.Sprintf("sender: %s, message: %s", sender, message)
+		text := fmt.Sprintf("sender: t.me/%s, message: %s", sender, message)
 		if len(message) > 0 {
-			err := ioutil.WriteFile(fmt.Sprintf("../reports/report_%v.txt", time.Now().Format("01-02-2006")), []byte(text), 0)
+			err := ioutil.WriteFile(fmt.Sprintf("./reports/report_%v.txt", time.Now().Format("01-02-2006")), []byte(text), 0)
 			if err != nil {
 				log.Fatal(err)
 				return ctx.Send("failed to write report")
