@@ -114,9 +114,7 @@ func (b *CwBot) deadlineHandler() tele.HandlerFunc {
 			for _, e := range cal.Events {
 				text = append(text, e.ToString())
 			}
-			ctx.Send(strings.Join(text, `
-			====================================
-			`))
+			ctx.Send(strings.Join(text, `====================================`))
 		}
 		return ctx.Send("available deadlines listed above")
 	}
@@ -126,7 +124,7 @@ func (b *CwBot) infoHandler() tele.HandlerFunc {
 	return func(ctx tele.Context) error {
 		links := []string{}
 		for _, cal := range b.logged[ctx.Sender().ID].Schedule {
-			links = append(links, cal.Link())
+			links = append(links, cal.Link)
 		}
 		return ctx.Send(fmt.Sprintf(INFO, b.logged[ctx.Sender().ID].Username, b.logged[ctx.Sender().ID].ID, strings.Join(links, "\n")))
 	}
@@ -140,6 +138,9 @@ func (b *CwBot) registerHandler() tele.HandlerFunc {
 		}
 		// TODO: use database
 		b.users = append(b.users, user)
+		if err := b.database.AddUser(user); err != nil {
+			return ctx.Send(err.Error())
+		}
 		b.logged[ctx.Sender().ID] = &user
 		return ctx.Send("register successful")
 	}
@@ -147,12 +148,12 @@ func (b *CwBot) registerHandler() tele.HandlerFunc {
 
 func (b *CwBot) loginHandler() tele.HandlerFunc {
 	return func(ctx tele.Context) error {
-		user := b.database.GetUser(ctx.Sender().ID)
+		user, err := b.database.GetUser(ctx.Sender())
 		if user != nil {
 			b.logged[ctx.Sender().ID] = user
 			return ctx.Send("logged successfully")
 		}
-		return ctx.Send("user not registered")
+		return ctx.Send(err.Error())
 	}
 }
 
@@ -163,6 +164,9 @@ func (b *CwBot) addCalHandler() tele.HandlerFunc {
 			return ctx.Send(err.Error())
 		}
 		if b.logged[ctx.Sender().ID].AddCall(cal) {
+			if err := b.database.AddCal(cal, ctx.Sender().ID); err != nil {
+				return ctx.Send(err.Error())
+			}
 			return ctx.Send("added successfully")
 		}
 		return ctx.Send("calendar already exists")

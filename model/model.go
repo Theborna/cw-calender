@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/apognu/gocal"
+	"github.com/hako/durafmt"
 	tele "gopkg.in/telebot.v3"
 )
 
@@ -32,28 +33,28 @@ Summary: %v
 Description: %v
 Deadline: %v
 Time left: %v
-`, e.Name, e.Prof, e.Summary, e.Description, e.Deadline.Format(time.ANSIC), time.Until(e.Deadline).Truncate(time.Minute))
+`, e.Name, e.Prof, e.Summary, e.Description, e.Deadline.Format(time.ANSIC), durafmt.Parse(time.Until(e.Deadline).Round(time.Minute)).String())
 }
 
 type Calendar struct {
-	link   string
+	Link   string
 	Events []Event
 }
 
 // const URL = `https:\\/\\/cw\\.sharif\\.edu\\/calendar\\/export_execute\\.php\\?userid=\\d+&authtoken=\\S+`
 const URL = `.+`
 
-func NewCalendar(link string) (*Calendar, error) {
-	link = strings.TrimSpace(link)
-	if len(link) == 0 {
-		return nil, fmt.Errorf("must provide a calendar link")
+func NewCalendar(Link string) (*Calendar, error) {
+	Link = strings.TrimSpace(Link)
+	if len(Link) == 0 {
+		return nil, fmt.Errorf("must provide a calendar Link")
 	}
-	// matched, _ := regexp.MatchString(link, URL)
+	// matched, _ := regexp.MatchString(Link, URL)
 	// if !matched {
 	// 	return nil, fmt.Errorf("invalid calendar url")
 	// }
 	cal := &Calendar{
-		link:   link,
+		Link:   Link,
 		Events: []Event{},
 	}
 	cal.UpdateEvents()
@@ -61,7 +62,7 @@ func NewCalendar(link string) (*Calendar, error) {
 }
 
 func (c *Calendar) UpdateEvents() {
-	data, _ := getLinkData(c.link)
+	data, _ := getLinkData(c.Link)
 	start, end := time.Now(), time.Now().Add(12*30*24*time.Hour)
 
 	cal := gocal.NewParser(bytes.NewReader(data))
@@ -103,12 +104,9 @@ func nameOfCourse(info string) (string, string) {
 	}
 	return "", ""
 }
-func (c *Calendar) Link() string {
-	return c.link
-}
 
-func getLinkData(link string) ([]byte, error) {
-	resp, err := http.Get(link)
+func getLinkData(Link string) ([]byte, error) {
+	resp, err := http.Get(Link)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -129,7 +127,7 @@ type User struct {
 
 func (u *User) AddCall(cal *Calendar) bool {
 	for _, c := range u.Schedule {
-		if c.Link() == cal.Link() {
+		if c.Link == cal.Link {
 			return false
 		}
 	}

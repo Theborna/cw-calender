@@ -11,6 +11,7 @@ require (
 )
 
 require (
+	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.13.0 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
@@ -29,5 +30,6 @@ require (
 require (
 	github.com/ChannelMeter/iso8601duration v0.0.0-20150204201828-8da3af7a2a61 // indirect
 	github.com/go-redis/redis v6.15.9+incompatible
+	github.com/google/uuid v1.3.0
 	gorm.io/driver/postgres v1.4.5
 )
