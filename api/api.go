@@ -85,7 +85,6 @@ func (b *CwBot) handlers() {
 	b.Handle("/addCal", b.addCalHandler(), middleware.IgnoreVia(), b.registeredMW())
 	b.Handle("/login", b.loginHandler(), middleware.IgnoreVia(), b.unregisteredMW())
 	b.Handle("/report", b.reportHandler(), middleware.IgnoreVia(), b.registeredMW())
-
 	b.Handle(tele.OnText, func(c tele.Context) error {
 		return c.Send("hi")
 	})

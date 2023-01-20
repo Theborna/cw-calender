@@ -57,6 +57,7 @@ func NewCalendar(Link string) (*Calendar, error) {
 		Link:   Link,
 		Events: []Event{},
 	}
+
 	cal.UpdateEvents()
 	return cal, nil
 }
